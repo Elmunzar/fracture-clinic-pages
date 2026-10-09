@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Praxia Clinic Manager — Download</title>
+<meta name="description" content="Download Praxia Clinic Manager with an invitation code.">
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root { --blue:#1565C0; --deep:#0D47A1; --ink:#15212B; --muted:#5A6B78; --line:#D5E1EF; --soft:#EEF4FC; --crit:#C62828; }
+  * { box-sizing:border-box }
+  body { margin:0; font:16px/1.6 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); background:#fff; padding-inline:20px }
+  header { background:var(--blue); color:#fff; margin-inline:-20px; padding:40px 20px 34px }
+  .wrap { max-width:620px; margin:0 auto }
+  h1 { margin:0; font-size:32px } header p { margin:6px 0 0; opacity:.9 }
+  h2 { color:var(--deep); font-size:19px; margin:30px 0 8px }
+  a { color:var(--blue) }
+  .card { background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin-top:24px }
+  label { display:block; font-weight:600; font-size:14px; margin-bottom:6px }
+  input { width:100%; padding:11px 13px; font:inherit; font-variant-numeric:tabular-nums; letter-spacing:.04em;
+          border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink) }
+  button { margin-top:12px; padding:11px 18px; font:inherit; font-weight:600; color:#fff; background:var(--blue);
+           border:0; border-radius:8px; cursor:pointer }
+  button:disabled { opacity:.5; cursor:not-allowed }
+  .note { font-size:13.5px; color:var(--muted); margin-top:10px }
+  .bad { color:var(--crit); font-size:14px; margin-top:10px }
+  ol { padding-left:20px } li { margin:6px 0 }
+  footer { color:var(--muted); font-size:14px; border-top:1px solid var(--line); margin-top:40px; padding:18px 0 40px }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Praxia Clinic Manager</h1>
+  <p>For Mac. By invitation.</p>
+</div></header>
+
+<div class="wrap">
+  <p>This copy is not on the App Store and is not listed anywhere. If somebody
+     has given you a code, enter it below.</p>
+
+  <div class="card">
+    <label for="code">Invitation code</label>
+    <input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false"
+           placeholder="e.g. ABCD-EFGH-JKLM" aria-describedby="hint">
+    <button id="go" type="button">Get the app</button>
+    <div id="hint" class="note">The code decides where the download lives, so it has to be exactly right — dashes and spacing do not matter.</div>
+    <div id="bad" class="bad" hidden>That code does not lead anywhere. Check it with whoever sent it to you.</div>
+  </div>
+
+  <h2>Once it has downloaded</h2>
+  <ol>
+    <li>Open the disk image and drag <strong>Praxia Clinic Manager</strong> into Applications.</li>
+    <li>Open it. It is signed and checked by Apple, so it starts without any warning.</li>
+    <li>Sign in with your NHS email address. An administrator in your department
+        has to approve the account before it opens — downloading the app is not
+        the same as being let in.</li>
+  </ol>
+
+  <h2>What it holds</h2>
+  <p>Everything stays on your Mac, encrypted. The app makes no network
+     connections at all. There is nothing to switch off and nowhere for the
+     data to go.</p>
+
+  <footer>
+    <a href="../">Support</a> · <a href="../privacy.html">Privacy</a><br>
+    Bagouri LTD
+  </footer>
+</div>
+
+<script>
+// The code is not checked against a list — a page like this cannot keep a
+// secret, and a JavaScript "password" that compares against a string in the
+// source is theatre. Instead the code IS the address: it is hashed, and the
+// hash is the folder the download sits in. Nothing in this page says where any
+// file lives, so a wrong code cannot be corrected by reading the source; it
+// simply leads nowhere.
+//
+// What that does and does not do: it stops the app being found by anybody who
+// has not been given a code. It does not stop somebody passing their code on.
+// The thing that actually decides who can use the app is inside it — an NHS
+// address, and an administrator approving the account.
+const tidy = s => s.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+async function pathFor(code) {
+  const bytes = new TextEncoder().encode("praxia-clinic-manager:" + tidy(code));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].slice(0, 10)
+    .map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+const input = document.getElementById("code");
+const button = document.getElementById("go");
+const bad = document.getElementById("bad");
+
+async function go() {
+  const code = tidy(input.value);
+  if (!code) { input.focus(); return; }
+  bad.hidden = true;
+  button.disabled = true;
+  button.textContent = "Checking…";
+
+  const folder = await pathFor(code);
+  const url = `./${folder}/Praxia-Clinic-Manager.dmg`;
+  // A HEAD request, so a wrong code says so instead of downloading a 404 page.
+  try {
+    const response = await fetch(url, { method: "HEAD" });
+    if (response.ok) { window.location.href = url; return; }
+  } catch (e) { /* offline, or the file is not there */ }
+
+  bad.hidden = false;
+  button.disabled = false;
+  button.textContent = "Get the app";
+}
+
+button.addEventListener("click", go);
+input.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+</script>
+</body>
+</html>
